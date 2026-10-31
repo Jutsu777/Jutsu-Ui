@@ -13,8 +13,7 @@ local Win = Lib:CreateWindow({
 	Name = "MyHubGui",         -- change per script so two hubs don't replace each other
 })
 
-local Tab = Win:AddTab("Main", "icon")   -- icon is optional: text symbol or rbxassetid://
-```
+local Tab = Win:AddTab("Main")
 
 ## Elements
 | Call | Returns |
