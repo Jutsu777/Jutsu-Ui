@@ -1,0 +1,54 @@
+local Lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Jutsu777/Jutsu-Ui/abffbbb9745fcd6dc2314a2f0b9cfecd8342fe21/JutsuLib.lua"))()
+
+local LOGO = "rbxassetid://89557631183529"
+
+local Win = Lib:CreateWindow({
+	Title = "JutsuLib",
+	Subtitle = "Teste funcional",
+	Theme = "Ocean",
+	Logo = LOGO,
+	Name = "JutsuLibTest",
+})
+
+local Main = Win:AddTab("Main")
+Main:AddSection("Toggle")
+local tg = Main:AddToggle({
+	Name = "Meu toggle",
+	Default = false,
+	Callback = function(v) print("Toggle:", v) end,
+})
+
+Main:AddSection("Botão")
+local lbl
+Main:AddButton({
+	Name = "Clique aqui",
+	Callback = function()
+		lbl:Set("Botão clicado! Toggle está " .. (tg:Get() and "ligado" or "desligado"))
+	end,
+})
+lbl = Main:AddLabel("Esperando clique...")
+
+Main:AddSection("Slider")
+Main:AddSlider({
+	Name = "Meu slider",
+	Min = 0,
+	Max = 100,
+	Default = 50,
+	Callback = function(v) print("Slider:", v) end,
+})
+
+Main:AddSection("Dropdown")
+local dd = Main:AddDropdown({
+	Name = "Meu dropdown",
+	Options = { "Opção 1", "Opção 2", "Opção 3" },
+	Default = "Opção 1",
+	Callback = function(v) lbl:Set("Dropdown: " .. v) end,
+})
+Main:AddButton({
+	Name = "Trocar opções",
+	Callback = function() dd:SetOptions({ "A", "B", "C", "D" }) end,
+})
+
+local Themes = Win:AddTab("Temas")
+Themes:AddSection("Selecione um tema")
+Themes:AddThemes()
