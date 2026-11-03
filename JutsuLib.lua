@@ -1,9 +1,24 @@
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
 
 local lp = Players.LocalPlayer
 local cam = workspace.CurrentCamera
+
+-- ═══ CLICK SOUND (criado uma vez, tocado em todo clique de tab) ═══
+local ClickSound = Instance.new("Sound")
+ClickSound.Name = "JutsuClickSound"
+ClickSound.SoundId = "rbxassetid://6895079853"
+ClickSound.Volume = 0.4
+ClickSound.Parent = SoundService
+
+local function playClick()
+    if ClickSound.Parent then
+        ClickSound.TimePosition = 0
+        pcall(function() ClickSound:Play() end)
+    end
+end
 
 local Lib = {}
 
@@ -342,7 +357,7 @@ function Lib:CreateWindow(opts)
 		AutoButtonColor = false, BorderSizePixel = 0, Visible = opts.FloatButton ~= false,
 	}, gui)
 	themed(float, "BackgroundColor3", "accent")
-	corner(float, 23)
+	corner(float, 8)  -- ⬅️ MUDADO: era 23 (círculo), agora 8 (quadrado arredondado)
 	local floatScale = new("UIScale", {}, float)
 	if not opts.Logo then
 		local letter = new("TextLabel", {
@@ -486,6 +501,7 @@ function Lib:CreateWindow(opts)
 		t.btn, t.lbl, t.ico, t.edge, t.page, t.glow = btn, lbl, ico, edge, page, glow
 		table.insert(tabs, t)
 		btn.MouseButton1Click:Connect(function()
+			playClick()  -- ⬅️ NOVO: toca o som no clique da tab
 			if selected ~= t then select(t) end
 		end)
 		if #tabs == 1 then select(t, true) end
