@@ -1,4 +1,4 @@
-local Lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Jutsu777/Jutsu-Ui/abffbbb9745fcd6dc2314a2f0b9cfecd8342fe21/JutsuLib.lua"))()
+local Lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Jutsu777/Jutsu-Ui/refs/heads/main/JutsuLib.lua"))()
 
 local Win = Lib:CreateWindow({
 	Title = "JutsuLib",
