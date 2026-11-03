@@ -357,7 +357,9 @@ function Lib:CreateWindow(opts)
 		AutoButtonColor = false, BorderSizePixel = 0, Visible = opts.FloatButton ~= false,
 	}, gui)
 	themed(float, "BackgroundColor3", "accent")
-	corner(float, 8)  -- ⬅️ MUDADO: era 23 (círculo), agora 8 (quadrado arredondado)
+	corner(float, 8)
+	local floatStroke = new("UIStroke", { Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, float)
+	themed(floatStroke, "Color", "stroke")
 	local floatScale = new("UIScale", {}, float)
 	if not opts.Logo then
 		local letter = new("TextLabel", {
@@ -501,7 +503,7 @@ function Lib:CreateWindow(opts)
 		t.btn, t.lbl, t.ico, t.edge, t.page, t.glow = btn, lbl, ico, edge, page, glow
 		table.insert(tabs, t)
 		btn.MouseButton1Click:Connect(function()
-			playClick()  -- ⬅️ NOVO: toca o som no clique da tab
+			playClick()
 			if selected ~= t then select(t) end
 		end)
 		if #tabs == 1 then select(t, true) end
