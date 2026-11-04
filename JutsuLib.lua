@@ -928,11 +928,6 @@ function Lib:ShowLoader(opts)
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling, DisplayOrder = 1001,
 	}, getUiParent())
 
-	local backdrop = new("Frame", {
-		Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0),
-		BackgroundTransparency = (opts.Dim and 0.35 or 1), BorderSizePixel = 0,
-	}, gui)
-
 	local cardW, cardH = 340, 160
 	local card = new("CanvasGroup", {
 		Size = UDim2.fromOffset(cardW, cardH),
@@ -1063,7 +1058,6 @@ function Lib:ShowLoader(opts)
 			task.wait(0.3)
 			tween(cs, 0.3, { Scale = 0.85 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 			tween(card, 0.3, { GroupTransparency = 1 })
-			tween(backdrop, 0.3, { BackgroundTransparency = 1 })
 			task.wait(0.35)
 			gui:Destroy()
 			if onDone then onDone() end
