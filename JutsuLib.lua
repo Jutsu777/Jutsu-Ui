@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
+local RunService = game:GetService("RunService")
 
 local lp = Players.LocalPlayer
 local cam = workspace.CurrentCamera
@@ -14,10 +15,10 @@ ClickSound.Volume = 0.4
 ClickSound.Parent = SoundService
 
 local function playClick()
-    if ClickSound.Parent then
-        ClickSound.TimePosition = 0
-        pcall(function() ClickSound:Play() end)
-    end
+	if ClickSound.Parent then
+		ClickSound.TimePosition = 0
+		pcall(function() ClickSound:Play() end)
+	end
 end
 
 local Lib = {}
@@ -64,8 +65,14 @@ local THEMES = {
 		accent = C(255, 107, 170), onAccent = C(255, 255, 255),
 		text = C(255, 236, 245), sub = C(205, 152, 178), knob = C(255, 246, 250),
 	},
+	Hack = {
+		bg = C(0, 6, 0), top = C(0, 14, 4), item = C(2, 22, 8), stroke = C(10, 60, 20),
+		accent = C(0, 255, 90), onAccent = C(0, 0, 0),
+		text = C(180, 255, 180), sub = C(60, 140, 60), knob = C(200, 255, 200),
+		dot = C(0, 80, 20),
+	},
 }
-local ORDER = { "Ocean", "Sky", "Full Black", "Purple", "Pink" }
+local ORDER = { "Ocean", "Sky", "Full Black", "Purple", "Pink", "Hack" }
 Lib.Themes = THEMES
 Lib.ThemeOrder = ORDER
 
@@ -243,6 +250,73 @@ function Lib:CreateWindow(opts)
 	corner(main, 12)
 	border(main)
 	local mainScale = new("UIScale", { Scale = 0.6 }, main)
+
+	-- ═══ MATRIX BACKGROUND (tema Hack) ═══
+	local matrixFrame = new("Frame", {
+		Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+		BorderSizePixel = 0, ClipsDescendants = true, ZIndex = 0,
+		Visible = (currentTheme == "Hack"),
+	}, main)
+	corner(matrixFrame, 12)
+
+	local MATRIX_CHARS = "アイウエオカキクケコサシスセソタチツテト0123456789ABCDEF<>[]{}!@#$%&*"
+	local MATRIX_COL_W = 14
+	local MATRIX_COLS = math.ceil(math.max(w, 800) / MATRIX_COL_W) + 2
+	local matrixCols = {}
+
+	local function randText(n)
+		local s = ""
+		for _ = 1, n do
+			local i = math.random(1, #MATRIX_CHARS)
+			s = s .. string.sub(MATRIX_CHARS, i, i) .. "\n"
+		end
+		return s
+	end
+
+	local function spawnMatrix()
+		for _, c in ipairs(matrixCols) do c:Destroy() end
+		matrixCols = {}
+		for i = 1, MATRIX_COLS do
+			local n = math.random(10, 22)
+			local col = new("TextLabel", {
+				Size = UDim2.fromOffset(MATRIX_COL_W - 3, n * 14 + 100),
+				Position = UDim2.fromOffset((i - 1) * MATRIX_COL_W, -math.random(150, 900)),
+				BackgroundTransparency = 1, Text = randText(n),
+				TextColor3 = THEMES.Hack.accent,
+				FontFace = FONT_BOLD, TextSize = 13,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextYAlignment = Enum.TextYAlignment.Top,
+				TextTransparency = math.random(45, 75) / 100,
+				ZIndex = 0,
+			}, matrixFrame)
+			col:SetAttribute("Spd", math.random(25, 60))
+			matrixCols[i] = col
+		end
+	end
+	spawnMatrix()
+
+	bind(RunService.Heartbeat, function(dt)
+		if not matrixFrame.Visible or not matrixFrame.Parent then return end
+		local hpx = main.AbsoluteSize.Y
+		if hpx <= 0 then hpx = h end
+		for _, col in ipairs(matrixCols) do
+			if col.Parent then
+				local p = col.Position
+				local ny = p.Y.Offset + dt * (col:GetAttribute("Spd") or 35)
+				if ny > hpx + 60 then
+					ny = -math.random(200, 900)
+					col.TextTransparency = math.random(45, 75) / 100
+					col.Text = randText(math.random(10, 22))
+				end
+				col.Position = UDim2.new(0, p.X.Offset, 0, ny)
+			end
+		end
+	end)
+
+	table.insert(onTheme, function()
+		matrixFrame.Visible = (currentTheme == "Hack")
+	end)
+	-- ═══ FIM MATRIX ═══
 
 	local BAR = UI.barHeight
 	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, BAR), BorderSizePixel = 0 }, main)
@@ -835,6 +909,168 @@ function Lib:AddTheme(name, colors)
 	theme.dot = colors.dot
 	THEMES[name] = theme
 	if not table.find(ORDER, name) then table.insert(ORDER, name) end
+end
+
+-- ═══ LOADER ═══
+function Lib:ShowLoader(opts)
+	opts = opts or {}
+	local title = opts.Title or "Jutsu"
+	local subtitle = opts.Subtitle or "Carregando..."
+	local themeName = opts.Theme or "Ocean"
+	local Th = THEMES[themeName] or THEMES.Ocean
+	local logo = opts.Logo
+	local minTime = opts.MinTime or 1
+	local key = opts.Key
+	if key == nil then key = Enum.KeyCode.RightShift end
+
+	local gui = new("ScreenGui", {
+		Name = "JutsuLoader", ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling, DisplayOrder = 1001,
+	}, getUiParent())
+
+	local backdrop = new("Frame", {
+		Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = (opts.Dim and 0.35 or 1), BorderSizePixel = 0,
+	}, gui)
+
+	local cardW, cardH = 340, 160
+	local card = new("CanvasGroup", {
+		Size = UDim2.fromOffset(cardW, cardH),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		BackgroundColor3 = Th.bg, BorderSizePixel = 0,
+		GroupTransparency = 1,
+	}, gui)
+	corner(card, 14)
+	new("UIStroke", { Color = Th.stroke, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, card)
+
+	local cs = new("UIScale", { Scale = 0.85 }, card)
+	tween(card, 0.35, { GroupTransparency = 0 })
+	tween(cs, 0.35, { Scale = 1 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+
+	local LOGO_SIZE = 52
+	local logoTile
+	if logo then
+		logoTile = new("ImageLabel", {
+			Size = UDim2.fromOffset(LOGO_SIZE, LOGO_SIZE),
+			Position = UDim2.new(0.5, -LOGO_SIZE / 2, 0, 22),
+			BackgroundTransparency = 1, Image = logo, ScaleType = Enum.ScaleType.Crop,
+		}, card)
+		corner(logoTile, 12)
+	else
+		logoTile = new("Frame", {
+			Size = UDim2.fromOffset(LOGO_SIZE, LOGO_SIZE),
+			Position = UDim2.new(0.5, -LOGO_SIZE / 2, 0, 22),
+			BackgroundColor3 = Th.accent, BorderSizePixel = 0,
+		}, card)
+		corner(logoTile, 12)
+		new("TextLabel", {
+			Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
+			Text = string.upper(string.sub(title, 1, 1)),
+			FontFace = FONT_BOLD, TextSize = 26, TextColor3 = Th.onAccent,
+		}, logoTile)
+	end
+
+	local logoGlow = new("UIStroke", {
+		Color = Th.accent, Thickness = 2, Transparency = 0.5,
+		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+	}, logoTile)
+	local pulse = TweenService:Create(
+		logoGlow,
+		TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{ Transparency = 0.05, Thickness = 4 }
+	)
+	pulse:Play()
+
+	new("TextLabel", {
+		Size = UDim2.new(1, -40, 0, 20), Position = UDim2.fromOffset(20, 84),
+		BackgroundTransparency = 1, Text = title,
+		FontFace = FONT_BOLD, TextSize = 16, TextColor3 = Th.text,
+	}, card)
+
+	local subLbl = new("TextLabel", {
+		Size = UDim2.new(1, -40, 0, 16), Position = UDim2.fromOffset(20, 104),
+		BackgroundTransparency = 1, Text = subtitle,
+		FontFace = FONT_REG, TextSize = 12, TextColor3 = Th.sub,
+	}, card)
+
+	local track = new("Frame", {
+		Size = UDim2.fromOffset(cardW - 40, 6), Position = UDim2.fromOffset(20, 130),
+		BackgroundColor3 = Th.stroke, BorderSizePixel = 0,
+	}, card)
+	corner(track, 3)
+	local fill = new("Frame", {
+		Size = UDim2.new(0, 0, 1, 0),
+		BackgroundColor3 = Th.accent, BorderSizePixel = 0,
+	}, track)
+	corner(fill, 3)
+	new("UIGradient", {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Th.accent),
+			ColorSequenceKeypoint.new(1, Th.accent:Lerp(Color3.new(1, 1, 1), 0.4)),
+		}),
+	}, fill)
+
+	local pctLbl = new("TextLabel", {
+		Size = UDim2.fromOffset(60, 14), Position = UDim2.new(1, -80, 0, 130),
+		BackgroundTransparency = 1, Text = "0%",
+		FontFace = FONT_BOLD, TextSize = 12, TextColor3 = Th.accent,
+		TextXAlignment = Enum.TextXAlignment.Right,
+	}, card)
+
+	local Loader = {}
+	local closed = false
+	local progress = 0
+	local startTime = os.clock()
+
+	local function setBar(v)
+		progress = math.clamp(v, 0, 1)
+		tween(fill, 0.3, { Size = UDim2.new(progress, 0, 1, 0) })
+		pctLbl.Text = math.floor(progress * 100) .. "%"
+	end
+
+	function Loader:SetProgress(v, msg)
+		setBar(v)
+		if msg then subLbl.Text = msg end
+	end
+	function Loader:SetStatus(msg) subLbl.Text = msg end
+
+	task.spawn(function()
+		local fake = 0
+		while not closed and progress < 0.9 do
+			task.wait(0.15)
+			if closed then break end
+			fake = math.min(fake + math.random(2, 6) / 100, 0.9)
+			if progress < fake then setBar(fake) end
+		end
+	end)
+
+	if key then
+		UIS.InputBegan:Connect(function(i, gp)
+			if not gp and not closed and i.KeyCode == key then Loader:Close() end
+		end)
+	end
+
+	function Loader:Close(onDone)
+		if closed then return end
+		closed = true
+		pulse:Cancel()
+		task.spawn(function()
+			local elapsed = os.clock() - startTime
+			if elapsed < minTime then task.wait(minTime - elapsed) end
+			setBar(1)
+			subLbl.Text = "Pronto"
+			task.wait(0.3)
+			tween(cs, 0.3, { Scale = 0.85 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			tween(card, 0.3, { GroupTransparency = 1 })
+			tween(backdrop, 0.3, { BackgroundTransparency = 1 })
+			task.wait(0.35)
+			gui:Destroy()
+			if onDone then onDone() end
+		end)
+	end
+
+	return Loader
 end
 
 return Lib
